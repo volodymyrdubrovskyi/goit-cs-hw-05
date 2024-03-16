@@ -1,4 +1,4 @@
-import argparse, asyncio, logging
+import argparse, asyncio, logging, os
 
 from aiopath import AsyncPath
 from aioshutil import copyfile
@@ -12,14 +12,20 @@ args = vars(parser.parse_args())
 source = AsyncPath(args["source"])
 dest = AsyncPath(args["output"])
 
+# source = AsyncPath("source")
+# dest = AsyncPath("output")
+
 copied_files = []
 
 async def read_folder(path: AsyncPath):
-    async for file in path.iterdir():
-        if await file.is_dir():
-            await read_folder(file)
-        else:
-            await copy_file(file)
+    if os.path.exists(path):
+        async for file in path.iterdir():
+            if await file.is_dir():
+                await read_folder(file)
+            else:
+                await copy_file(file)
+    else:
+        print(f"Folder {path} doesn't exist. List of files to copy is empty")
 
 async def copy_file(file: AsyncPath):
     folder = dest / file.suffix[1:]
@@ -39,4 +45,4 @@ if __name__ == "__main__":
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     asyncio.run(read_folder(source))
 
-    print(f"All files copied to '{dest}' folder")
+    print(f"All files from '{source}' copied to '{dest}' folder")
